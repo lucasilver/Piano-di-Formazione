@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionale Piano della Formazione</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+    <div id="login-container" class="auth-card">
+        <h2>Accesso Gestionale Formazione</h2>
+        <form id="login-form">
+            <div class="form-group">
+                <label>Email Aziendale</label>
+                <input type="email" id="login-email" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="login-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Accedi</button>
+        </form>
+    </div>
+
+    <div id="app-container" class="hidden">
+        <header class="navbar">
+            <div class="brand">Piano Formazione Aziendale</div>
+            <div class="user-control">
+                <span id="user-display">Ufficio Formazione</span>
+                <button id="logout-btn" class="btn btn-secondary btn-sm">Logout</button>
+            </div>
+        </header>
+
+        <main class="dashboard-layout">
+            <section class="control-panelCard">
+                <div class="edition-selector">
+                    <label for="select-anno">Edizione Piano:</label>
+                    <select id="select-anno"></select>
+                    <button id="btn-clona-anno" class="btn btn-secondary btn-sm hidden">Passa ad Anno Successivo</button>
+                </div>
+                <div class="kpi-container">
+                    <div class="kpi-card"><span class="kpi-title">Pianificati</span><span id="kpi-pianificato" class="kpi-value">0%</span></div>
+                    <div class="kpi-card"><span class="kpi-title">In Corso</span><span id="kpi-corso" class="kpi-value">0%</span></div>
+                    <div class="kpi-card"><span class="kpi-title">Conclusi</span><span id="kpi-concluso" class="kpi-value">0%</span></div>
+                    <div class="kpi-card"><span class="kpi-title">Annullati</span><span id="kpi-annullato" class="kpi-value">0%</span></div>
+                </div>
+            </section>
+
+            <section class="filter-bar">
+                <input type="text" id="search-input" placeholder="Cerca per parola chiave (argomento, obiettivi...)...">
+                <select id="filter-area">
+                    <option value="">Tutte le Aree</option>
+                    <option value="Sicurezza">Sicurezza</option>
+                    <option value="Gestionali">Gestionali</option>
+                    <option value="Specialistiche">Specialistiche</option>
+                    <option value="Trasversali">Trasversali</option>
+                </select>
+                <select id="filter-stato">
+                    <option value="">Tutti gli Stati</option>
+                    <option value="Pianificato">Pianificato</option>
+                    <option value="In corso">In corso</option>
+                    <option value="Concluso">Concluso</option>
+                    <option value="Annullato">Annullato</option>
+                </select>
+                <div class="export-actions">
+                    <button id="btn-export-excel" class="btn btn-success">Excel</button>
+                    <button id="btn-export-pdf" class="btn btn-danger">PDF</button>
+                </div>
+            </section>
+
+            <section class="table-container">
+                <table id="corsi-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="lepta">LEPTA</th>
+                            <th data-sort="area">Area</th>
+                            <th data-sort="segmento_formativo">Segmento</th>
+                            <th data-sort="argomento">Argomento</th>
+                            <th data-sort="valenza">Valenza</th>
+                            <th data-sort="tipologia">Tipologia</th>
+                            <th data-sort="stato_avanzamento">Stato</th>
+                            <th class="actions-col">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corsi-tbody">
+                        </tbody>
+                </table>
+                <div class="table-footer-actions">
+                    <button id="btn-apri-form" class="btn btn-primary">+ Aggiungi Corso</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="corso-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-title">Nuovo Corso di Formazione</h3>
+            <form id="corso-form">
+                <input type="hidden" id="corso-id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Attività LEPTA</label>
+                        <select id="form-lepta" required>
+                            <option value="W">W</option><option value="D">D</option><option value="O">O</option>
+                            <option value="L1">L1</option><option value="L2">L2</option><option value="L3">L3</option>
+                            <option value="L4">L4</option><option value="L5">L5</option><option value="L6">L6</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Area</label>
+                        <select id="form-area" required>
+                            <option value="Sicurezza">Sicurezza</option>
+                            <option value="Gestionali">Gestionali</option>
+                            <option value="Specialistiche">Specialistiche</option>
+                            <option value="Trasversali">Trasversali</option>
+                        </select>
+                    </div>
+                    <div class="form-group span-2">
+                        <label>Segmento Formativo</label>
+                        <select id="form-segmento" required>
+                            <option value="Trasversali">Trasversali</option>
+                            <option value="Mod Specialistici">Mod Specialistici</option>
+                            <option value="Transizione Digitale">Transizione Digitale</option>
+                            <option value="Addestramento a supporto della digitalizzazione e software">Addestramento a supporto della digitalizzazione e software</option>
+                            <option value="Qualità">Qualità</option>
+                            <option value="Metrologia">Metrologia</option>
+                            <option value="Reti e Comitati">Reti e Comitati</option>
+                            <option value="Linee guida e procedure">Linee guida e procedure</option>
+                            <option value="Gestione emergenze">Gestione emergenze</option>
+                            <option value="Acqua e Biomonitoraggi">Acqua e Biomonitoraggi</option>
+                            <option value="Rischi naturali e ambientali">Rischi naturali e ambientali</option>
+                            <option value="Aria, emissioni e aeriformi">Aria, emissioni e aeriformi</option>
+                            <option value="Agenti fisici">Agenti fisici</option>
+                            <option value="Laboratori">Laboratori</option>
+                            <option value="Impianti termici ed energia">Impianti termici ed energia</option>
+                            <option value="Rifiuti, suolo, bonifiche, sostanze pericolose, amianto e inquinanti emergenti">Rifiuti, suolo, bonifiche, sostanze pericolose, amianto e inquinanti emergenti</option>
+                            <option value="VIA, VAS, VI, AIA, AUA, RIR">VIA, VAS, VI, AIA, AUA, RIR</option>
+                            <option value="Neoassunti">Neoassunti</option>
+                            <option value="Organizzative Direzione IF">Organizzative Direzione IF</option>
+                            <option value="Aggiornamento normativo">Aggiornamento normativo</option>
+                            <option value="Contabilità">Contabilità</option>
+                            <option value="Contratti e procedure amministrative">Contratti e procedure amministrative</option>
+                            <option value="Acquisti">Acquisti</option>
+                        </select>
+                    </div>
+                    <div class="form-group span-2">
+                        <label>Argomento Corso</label>
+                        <input type="text" id="form-argomento" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Valenza</label>
+                        <select id="form-valenza" required>
+                            <option value="Interno">Interno</option>
+                            <option value="Esterno">Esterno</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipologia</label>
+                        <select id="form-tipologia" required>
+                            <option value="In presenza">In presenza</option>
+                            <option value="FAD">FAD</option>
+                            <option value="E-learning">E-learning</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Stato Avanzamento</label>
+                        <select id="form-stato" required>
+                            <option value="Pianificato">Pianificato</option>
+                            <option value="In corso">In corso</option>
+                            <option value="Concluso">Concluso</option>
+                            <option value="Annullato">Annullato</option>
+                        </select>
+                    </div>
+                    <div class="form-group span-2">
+                        <label>Obiettivi del corso</label>
+                        <textarea id="form-obiettivi" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group span-2">
+                        <label>Destinatari</label>
+                        <textarea id="form-destinatari" rows="2" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btn-chiudi-modal" class="btn btn-secondary">Annulla</button>
+                    <button type="submit" class="btn btn-primary">Salva Corso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
