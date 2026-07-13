@@ -1,7 +1,7 @@
 // Inizializzazione client Supabase
 const SUPABASE_URL = 'https://zbokkaxvwirinflrquat.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_a-Tv3HwY_h27g3UI6U125A_chZ_g2wx';
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Stato dell'applicazione
 let appState = {
@@ -30,6 +30,7 @@ const DOM = {
     corsoModal: document.getElementById('corso-modal'),
     corsoForm: document.getElementById('corso-form'),
     btnChiudiModal: document.getElementById('btn-chiudi-modal'),
+    modalTitle: document.getElementById('modal-title'),
     searchInput: document.getElementById('search-input'),
     filterArea: document.getElementById('filter-area'),
     filterStato: document.getElementById('filter-stato'),
