@@ -1,7 +1,7 @@
 // Inizializzazione client Supabase
 const SUPABASE_URL = 'https://zbokkaxvwirinflrquat.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_a-Tv3HwY_h27g3UI6U125A_chZ_g2wx';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Stato dell'applicazione
 let appState = {
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initAuthListener() {
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
         if (session) {
             appState.user = session.user;
             appState.userRole = session.user.user_metadata.role || 'lettore';
@@ -73,7 +73,7 @@ DOM.loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) alert('Errore autenticazione: ' + error.message);
 });
 
@@ -81,7 +81,7 @@ DOM.logoutBtn.addEventListener('click', () => supabase.auth.signOut());
 
 // --- CARICAMENTO DATI ---
 async function caricaEdizioni() {
-    const { data, error } = await supabase.from('edizioni_piano').select('*').order('anno', { ascending: false });
+    const { data, error } = await supabaseClient.from('edizioni_piano').select('*').order('anno', { ascending: false });
     if (error) return console.error(error);
     
     appState.edizioni = data;
@@ -89,7 +89,7 @@ async function caricaEdizioni() {
     if(data.length === 0) {
         // Se non ci sono edizioni, ne creiamo una iniziale (anno corrente)
         const annoCorrente = new Date().getFullYear();
-        const { data: nuovaEd } = await supabase.from('edizioni_piano').insert([{ anno: annoCorrente, stato: 'bozza' }]).select();
+        const { data: nuovaEd } = await supabaseClient.from('edizioni_piano').insert([{ anno: annoCorrente, stato: 'bozza' }]).select();
         appState.edizioni = nuovaEd;
     }
 
@@ -106,7 +106,7 @@ function setEdizioneCorrente(id) {
 
 async function caricaCorsi() {
     if (!appState.edizioneCorrenteId) return;
-    const { data, error } = await supabase.from('corsi').select('*').eq('edizione_id', appState.edizioneCorrenteId);
+    const { data, error } = await supabaseClient.from('corsi').select('*').eq('edizione_id', appState.edizioneCorrenteId);
     if (error) return alert('Errore caricamento corsi: ' + error.message);
     appState.corsi = data;
     processaEDisplay();
@@ -206,10 +206,10 @@ DOM.corsoForm.addEventListener('submit', async (e) => {
     };
 
     if (id) {
-        const { error } = await supabase.from('corsi').update(corsoData).eq('id', id);
+        const { error } = await supabaseClient.from('corsi').update(corsoData).eq('id', id);
         if (error) alert(error.message);
     } else {
-        const { error } = await supabase.from('corsi').insert([corsoData]);
+        const { error } = await supabaseClient.from('corsi').insert([corsoData]);
         if (error) alert(error.message);
     }
 
@@ -237,7 +237,7 @@ window.apriModificaCorso = function(id) {
 
 window.eliminaCorso = async function(id) {
     if(!confirm("Sei sicuro di voler eliminare questo corso definitivamente?")) return;
-    const { error } = await supabase.from('corsi').delete().eq('id', id);
+    const { error } = await supabaseClient.from('corsi').delete().eq('id', id);
     if (error) alert(error.message);
     caricaCorsi();
 }
@@ -247,7 +247,7 @@ DOM.btnClonaAnno.addEventListener('click', async () => {
     const annoSuccessivo = appState.edizioneCorrenteAnno + 1;
     if(!confirm(`Stai per chiudere l'anno ${appState.edizioneCorrenteAnno}. Tutti i corsi in stato 'Pianificato' o 'Annullato' verranno clonati nel nuovo piano annuale ${annoSuccessivo}. Vuoi procedere?`)) return;
     
-    const { error } = await supabase.rpc('clona_corsi_anno_successivo', { 
+    const { error } = await supabaseClient.rpc('clona_corsi_anno_successivo', { 
         anno_corrente: appState.edizioneCorrenteAnno, 
         anno_nuovo: annoSuccessivo 
     });
