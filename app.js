@@ -73,11 +73,35 @@ DOM.loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
+
     const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) alert('Errore autenticazione: ' + error.message);
+    
+    if (error) {
+        // Mostra un popup chiaro in caso di credenziali errate o problemi di rete
+        if (error.status === 400 || error.message.includes("credentials")) {
+            alert("Accesso negato: L'email o la password inserite non sono corrette.");
+        } else {
+            alert("Errore di autenticazione: " + error.message);
+        }
+    }
 });
 
-DOM.logoutBtn.addEventListener('click', () => supabase.auth.signOut());
+DOM.logoutBtn.addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+    
+    // Reset completo dello stato locale
+    appState.user = null;
+    appState.corsi = [];
+    appState.edizioni = [];
+    appState.edizioneCorrenteId = null;
+    
+    // Switch visivo immediato delle schermate
+    DOM.appContainer.classList.add('hidden');
+    DOM.loginContainer.classList.remove('hidden');
+    
+    // Pulisce l'URL del browser da eventuali parametri di sottomissione errati (?)
+    window.location.href = window.location.origin + window.location.pathname;
+});
 
 // --- CARICAMENTO DATI ---
 async function caricaEdizioni() {
@@ -97,10 +121,36 @@ async function caricaEdizioni() {
     setEdizioneCorrente(DOM.selectAnno.value);
 }
 
+function verificaBloccoClonazione() {
+    if (appState.userRole !== 'admin' && appState.userRole !== 'responsabile') {
+        DOM.btnClonaAnno.classList.add('hidden');
+        return;
+    }
+
+    const annoSuccessivo = appState.edizioneCorrenteAnno + 1;
+    // Controlla se tra le edizioni scaricate esiste già l'anno successivo
+    const giaClonato = appState.edizioni.some(e => e.anno === annoSuccessivo);
+
+    if (giaClonato) {
+        DOM.btnClonaAnno.disabled = true;
+        DOM.btnClonaAnno.textContent = `Anno ${annoSuccessivo} già creato`;
+        DOM.btnClonaAnno.style.opacity = "0.5";
+        DOM.btnClonaAnno.style.cursor = "not-allowed";
+        DOM.btnClonaAnno.title = "Il piano per l'anno successivo è già presente nel database.";
+    } else {
+        DOM.btnClonaAnno.disabled = false;
+        DOM.btnClonaAnno.textContent = "Passa ad Anno Successivo";
+        DOM.btnClonaAnno.style.opacity = "1";
+        DOM.btnClonaAnno.style.cursor = "pointer";
+        DOM.btnClonaAnno.title = "";
+    }
+}
+
 function setEdizioneCorrente(id) {
     appState.edizioneCorrenteId = id;
     const ed = appState.edizioni.find(e => e.id === id);
     appState.edizioneCorrenteAnno = ed ? ed.anno : null;
+    verificaBloccoClonazione();
     caricaCorsi();
 }
 
@@ -338,6 +388,19 @@ DOM.btnExportPDF.addEventListener('click', () => {
 // --- EVENT LISTENERS DI INTERFACCIA ---
 function setupEventListeners() {
     DOM.selectAnno.addEventListener('change', (e) => setEdizioneCorrente(e.target.value));
+
+    // Gestione espansione righe al clic
+    DOM.corsiTbody.addEventListener('click', (e) => {
+        // Se l'utente clicca su un pulsante di modifica/eliminazione o nella cella azioni, non espandere
+        if (e.target.closest('.btn-sm') || e.target.closest('.actions-col')) {
+            return; 
+        }
+    
+        const riga = e.target.closest('tr');
+        if (riga) {
+            riga.classList.toggle('expanded');
+        }
+    });
     
     DOM.btnApriForm.addEventListener('click', () => {
         DOM.corsoForm.reset();
