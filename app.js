@@ -303,7 +303,7 @@ function renderTabella(lista) {
         <tr data-id="${c.id}">
             <td><strong>${c.lepta}</strong></td>
             <td>${c.area}</td>
-            <td><small>${c.segmento_formativo}</small></td>
+            <td>${c.segmento_formativo}</td>
             <td><strong>${c.argomento}</strong></td>
             <td>${c.valenza}</td>
             <td>${c.tipologia}</td>
