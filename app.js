@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAuthListener();
     setupEventListeners();
     setupAutoCalculations();
+    setupSortingAndRowExpansion();
 });
 
 function initAuthListener() {
@@ -159,29 +160,80 @@ DOM.btnApprovaPiano.addEventListener('click', async () => {
     else caricaEdizioni();
 });
 
+// --- CLONA PIANO AD ANNO SUCCESSIVO ---
+DOM.btnClonaAnno.addEventListener('click', async () => {
+    if (appState.userRole !== 'responsabile' && appState.userRole !== 'admin') {
+        return alert("Solo il Responsabile Formazione o l'Admin possono passare all'anno successivo.");
+    }
+
+    const nuovoAnno = Number(appState.edizioneCorrenteAnno) + 1;
+    
+    // Verifica se l'edizione esiste già
+    const giaEsistente = appState.edizioni.find(e => Number(e.anno) === nuovoAnno);
+    if (giaEsistente) {
+        return alert(`L'edizione del piano per l'anno ${nuovoAnno} esiste già.`);
+    }
+
+    if (!confirm(`Vuoi creare la nuova edizione per l'anno ${nuovoAnno} clonando i corsi attuali (solo dati V1 base)?`)) return;
+
+    // 1. Inserisce la nuova edizione in stato bozza
+    const { data: nuovaEd, error: errEd } = await supabaseClient
+        .from('edizioni_piano')
+        .insert([{ anno: nuovoAnno, stato: 'bozza' }])
+        .select();
+
+    if (errEd) return alert("Errore creazione nuova edizione: " + errEd.message);
+
+    const nuovaEdId = nuovaEd[0].id;
+
+    // 2. Clona i corsi attuali mantenendo solo i campi V1
+    const nuoviCorsi = appState.corsi.map(c => ({
+        edizione_id: nuovaEdId,
+        lepta: c.lepta,
+        area: c.area,
+        segmento_formativo: c.segmento_formativo,
+        argomento: c.argomento,
+        valenza: c.valenza,
+        tipologia: c.tipologia,
+        obiettivi: c.obiettivi || '',
+        destinatari: c.destinatari || '',
+        stato_avanzamento: 'Pianificato',
+        creato_da: appState.user.id
+    }));
+
+    if (nuoviCorsi.length > 0) {
+        const { error: errCorsi } = await supabaseClient.from('corsi').insert(nuoviCorsi);
+        if (errCorsi) alert("Errore durante la clonazione dei corsi: " + errCorsi.message);
+    }
+
+    alert(`Edizione ${nuovoAnno} creata con successo!`);
+    await caricaEdizioni();
+});
+
 // --- RENDER INTESTAZIONE TABELLA DINAMICA ---
 function renderTableHeader() {
     let html = `
-        <th>LEPTA</th>
-        <th>Area</th>
-        <th>Segmento</th>
-        <th>Argomento</th>
-        <th>Valenza</th>
-        <th>Tipologia</th>
-        <th>Stato</th>
+        <th data-sort="lepta">LEPTA</th>
+        <th data-sort="area">Area</th>
+        <th data-sort="segmento_formativo">Segmento</th>
+        <th data-sort="argomento">Argomento</th>
+        <th data-sort="valenza">Valenza</th>
+        <th data-sort="tipologia">Tipologia</th>
+        <th data-sort="stato_avanzamento">Stato</th>
     `;
 
     if (appState.edizioneStato === 'approvato') {
         html += `
-            <th>Edizioni</th>
-            <th>Part. Tot.</th>
-            <th>Dirigenti</th>
-            <th>Comparto</th>
-            <th>U. Comp.</th>
-            <th>D. Comp.</th>
-            <th>U. Dir.</th>
-            <th>D. Dir.</th>
-            <th>Spesa Tot.</th>
+            <th data-sort="edizioni">Ediz.</th>
+            <th data-sort="partecipanti">Part. Tot.</th>
+            <th data-sort="dirigenti">Dirig.</th>
+            <th data-sort="comparto">Comp.</th>
+            <th data-sort="uomini_comparto">U. Comp.</th>
+            <th data-sort="donne_comparto">D. Comp.</th>
+            <th data-sort="uomini_dirigenti">U. Dir.</th>
+            <th data-sort="donne_dirigenti">D. Dir.</th>
+            <th data-sort="ore_minuti">Ore</th>
+            <th data-sort="totale_spesa">Spesa Tot.</th>
         `;
     }
 
@@ -218,7 +270,7 @@ function processaEDisplay() {
 
 function renderTabella(lista) {
     if (lista.length === 0) {
-        const colSpan = appState.edizioneStato === 'approvato' ? 17 : 8;
+        const colSpan = appState.edizioneStato === 'approvato' ? 18 : 8;
         DOM.corsiTbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center;">Nessun corso presente.</td></tr>`;
         return;
     }
@@ -226,7 +278,7 @@ function renderTabella(lista) {
     const isApprovato = appState.edizioneStato === 'approvato';
 
     DOM.corsiTbody.innerHTML = lista.map(c => `
-        <tr>
+        <tr data-id="${c.id}">
             <td><strong>${c.lepta}</strong></td>
             <td>${c.area}</td>
             <td><small>${c.segmento_formativo}</small></td>
@@ -243,9 +295,10 @@ function renderTabella(lista) {
                 <td>${c.donne_comparto || 0}</td>
                 <td>${c.uomini_dirigenti || 0}</td>
                 <td>${c.donne_dirigenti || 0}</td>
+                <td>${minutiToHHMM(c.ore_minuti)}</td>
                 <td>€ ${(c.totale_spesa || 0).toFixed(2)}</td>
             ` : ''}
-            <td class="actions-col">
+            <td class="actions-col" onclick="event.stopPropagation()">
                 <button class="btn btn-secondary btn-sm" onclick="clonaCorso('${c.id}')" title="Clona base corso">Clona</button>
                 ${(appState.userRole === 'admin' || appState.userRole === 'responsabile') ? `
                     <button class="btn btn-secondary btn-sm" onclick="apriModificaCorso('${c.id}')">Modifica</button>
@@ -254,6 +307,45 @@ function renderTabella(lista) {
             </td>
         </tr>
     `).join('');
+}
+
+// --- LOGICA DI ORDINAMENTO TABELLA ---
+function setupSortingAndRowExpansion() {
+    // Click sulle intestazioni per ordinare
+    DOM.tableHeaderRow.addEventListener('click', (e) => {
+        const th = e.target.closest('th');
+        if (!th || !th.dataset.sort) return;
+
+        const campo = th.dataset.sort;
+        if (appState.sortCampo === campo) {
+            appState.sortAscending = !appState.sortAscending;
+        } else {
+            appState.sortCampo = campo;
+            appState.sortAscending = true;
+        }
+
+        appState.corsi.sort((a, b) => {
+            let valA = a[campo] ?? '';
+            let valB = b[campo] ?? '';
+            
+            if (typeof valA === 'string') valA = valA.toLowerCase();
+            if (typeof valB === 'string') valB = valB.toLowerCase();
+
+            if (valA < valB) return appState.sortAscending ? -1 : 1;
+            if (valA > valB) return appState.sortAscending ? 1 : -1;
+            return 0;
+        });
+
+        processaEDisplay();
+    });
+
+    // Click sulla riga per espandere/comprimere il testo
+    DOM.corsiTbody.addEventListener('click', (e) => {
+        const tr = e.target.closest('tr');
+        if (tr && !e.target.closest('.actions-col')) {
+            tr.classList.toggle('expanded');
+        }
+    });
 }
 
 // --- CALCOLO TOTALI FOOTER ---
@@ -267,9 +359,10 @@ function calcolaTotaliPieDiPagina(lista) {
         acc.donne_comparto += Number(c.donne_comparto || 0);
         acc.uomini_dirigenti += Number(c.uomini_dirigenti || 0);
         acc.donne_dirigenti += Number(c.donne_dirigenti || 0);
+        acc.ore_minuti += Number(c.ore_minuti || 0);
         acc.totale_spesa += Number(c.totale_spesa || 0);
         return acc;
-    }, { edizioni:0, partecipanti:0, dirigenti:0, comparto:0, uomini_comparto:0, donne_comparto:0, uomini_dirigenti:0, donne_dirigenti:0, totale_spesa:0 });
+    }, { edizioni:0, partecipanti:0, dirigenti:0, comparto:0, uomini_comparto:0, donne_comparto:0, uomini_dirigenti:0, donne_dirigenti:0, ore_minuti:0, totale_spesa:0 });
 
     document.getElementById('tot-edizioni').textContent = tot.edizioni;
     document.getElementById('tot-partecipanti').textContent = tot.partecipanti;
@@ -279,6 +372,16 @@ function calcolaTotaliPieDiPagina(lista) {
     document.getElementById('tot-donne-comp').textContent = tot.donne_comparto;
     document.getElementById('tot-uomini-dir').textContent = tot.uomini_dirigenti;
     document.getElementById('tot-donne-dir').textContent = tot.donne_dirigenti;
+    
+    // Inseriamo o aggiorniamo la cella ore nel tfoot dinamicamente
+    let totOreElem = document.getElementById('tot-ore');
+    if (!totOreElem) {
+        totOreElem = document.createElement('td');
+        totOreElem.id = 'tot-ore';
+        const spesaTd = document.getElementById('tot-spesa');
+        spesaTd.parentNode.insertBefore(totOreElem, spesaTd);
+    }
+    totOreElem.textContent = minutiToHHMM(tot.ore_minuti);
     document.getElementById('tot-spesa').textContent = `€ ${tot.totale_spesa.toFixed(2)}`;
 }
 
@@ -377,21 +480,37 @@ window.clonaCorso = function(id) {
     if (!c) return;
 
     DOM.corsoForm.reset();
-    document.getElementById('corso-id').value = ''; // ID Vuoto = Nuovo Inserimento
-    
-    // Mantiene SOLO i dati base V1
+    document.getElementById('corso-id').value = ''; // Nuovo record
+
+    // Mantiene V1
     document.getElementById('form-lepta').value = c.lepta;
     document.getElementById('form-area').value = c.area;
     document.getElementById('form-segmento').value = c.segmento_formativo;
     document.getElementById('form-argomento').value = c.argomento;
     document.getElementById('form-valenza').value = c.valenza;
     document.getElementById('form-tipologia').value = c.tipologia;
-    
-    // Svuota gli altri campi
-    document.getElementById('form-obiettivi').value = '';
-    document.getElementById('form-destinatari').value = '';
-    
-    DOM.modalTitle.textContent = "Clona Corso (Copia da esistente)";
+    document.getElementById('form-stato').value = 'Pianificato';
+    document.getElementById('form-obiettivi').value = c.obiettivi || '';
+    document.getElementById('form-destinatari').value = c.destinatari || '';
+
+    // Svuota V2 esplicitamente
+    document.getElementById('form-codice').value = '';
+    document.getElementById('form-titolo').value = '';
+    document.getElementById('form-edizioni').value = 0;
+    document.getElementById('form-partecipanti').value = 0;
+    document.getElementById('form-dirigenti').value = 0;
+    document.getElementById('form-comparto').value = 0;
+    document.getElementById('form-uomini-comparto').value = 0;
+    document.getElementById('form-donne-comparto').value = 0;
+    document.getElementById('form-uomini-dirigenti').value = 0;
+    document.getElementById('form-donne-dirigenti').value = 0;
+    document.getElementById('form-ore').value = '00:00';
+    document.getElementById('form-totale-spesa').value = 0.00;
+    document.getElementById('form-comparto-spesa-perc').value = 0;
+    document.getElementById('form-dirigenti-spesa-perc').value = 0;
+    document.getElementById('form-ecm').value = 0.0;
+
+    DOM.modalTitle.textContent = "Clona Corso (Nuova Bozza)";
     DOM.corsoModal.classList.remove('hidden');
 };
 
@@ -452,6 +571,52 @@ function calcolaKPI() {
     document.getElementById('kpi-concluso').textContent = Math.round((conteggi['Concluso'] / totale) * 100) + '%';
     document.getElementById('kpi-annullato').textContent = Math.round((conteggi['Annullato'] / totale) * 100) + '%';
 }
+
+// --- ESPORTAZIONE EXCEL ---
+DOM.btnExportExcel.addEventListener('click', () => {
+    if (appState.corsi.length === 0) return alert("Nessun dato da esportare.");
+
+    const isApprovato = appState.edizioneStato === 'approvato';
+    const datiExport = appState.corsi.map(c => {
+        let riga = {
+            'LEPTA': c.lepta,
+            'Area': c.area,
+            'Segmento Formativo': c.segmento_formativo,
+            'Argomento': c.argomento,
+            'Valenza': c.valenza,
+            'Tipologia': c.tipologia,
+            'Stato Avanzamento': c.stato_avanzamento,
+            'Obiettivi': c.obiettivi,
+            'Destinatari': c.destinatari
+        };
+
+        if (isApprovato) {
+            Object.assign(riga, {
+                'Codice': c.codice || '',
+                'Titolo Esteso': c.titolo || '',
+                'Edizioni': c.edizioni || 0,
+                'Partecipanti Totali': c.partecipanti || 0,
+                'Dirigenti': c.dirigenti || 0,
+                'Comparto': c.comparto || 0,
+                'Uomini Comparto': c.uomini_comparto || 0,
+                'Donne Comparto': c.donne_comparto || 0,
+                'Uomini Dirigenti': c.uomini_dirigenti || 0,
+                'Donne Dirigenti': c.donne_dirigenti || 0,
+                'Ore Formazione': minutiToHHMM(c.ore_minuti),
+                'Totale Spesa (€)': c.totale_spesa || 0,
+                'Comparto Spesa %': c.comparto_spesa_perc || 0,
+                'Dirigenti Spesa %': c.dirigenti_spesa_perc || 0,
+                'Valutazione ECM': c.valutazione_ecm || 0
+            });
+        }
+        return riga;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(datiExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Piano Formazione");
+    XLSX.writeFile(workbook, `Piano_Formazione_${appState.edizioneCorrenteAnno}.xlsx`);
+});
 
 // --- ESPORTAZIONE PDF A3 ORIZZONTALE ---
 DOM.btnExportPDF.addEventListener('click', () => {
