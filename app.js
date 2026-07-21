@@ -139,14 +139,6 @@ function setEdizioneCorrente(id) {
     appState.edizioneCorrenteAnno = ed.anno;
     appState.edizioneStato = ed.stato;
 
-    const isAuthorized = appState.userRole === 'responsabile' || appState.userRole === 'admin';
-
-    // Mostra il pulsante "Passa ad Anno Successivo" solo agli utenti autorizzati
-    if (isAuthorized) {
-        DOM.btnClonaAnno.classList.remove('hidden');
-    } else {
-        DOM.btnClonaAnno.classList.add('hidden');
-
     // Gestione visualizzazione stato Approvato
     if (ed.stato === 'approvato') {
         DOM.approvazioneBox.classList.remove('hidden');
