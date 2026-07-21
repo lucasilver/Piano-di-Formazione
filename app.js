@@ -303,14 +303,14 @@ function renderTabella(lista) {
         <tr data-id="${c.id}">
             <td><strong>${c.lepta}</strong></td>
             <td>${c.area}</td>
-            <td>${c.segmento_formativo}</td>
-            <td><strong>${c.argomento}</strong></td>
+            <td class="cell-truncate" title="${c.segmento_formativo}"><small>${c.segmento_formativo}</small></td>
+            <td class="cell-truncate" title="${c.argomento}"><strong>${c.argomento}</strong></td>
             <td>${c.valenza}</td>
             <td>${c.tipologia}</td>
             <td><span class="badge badge-${c.stato_avanzamento.toLowerCase().replace(' ', '')}">${c.stato_avanzamento}</span></td>
             ${isApprovato ? `
                 <td><code>${c.codice || '-'}</code></td>
-                <td>${c.titolo || '-'}</td>
+                <td class="cell-truncate" title="${c.titolo || ''}">${c.titolo || '-'}</td>
                 <td>${c.edizioni || 0}</td>
                 <td><strong>${c.partecipanti || 0}</strong></td>
                 <td>${c.dirigenti || 0}</td>
