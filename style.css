@@ -39,67 +39,102 @@ body { background-color: var(--bg-main); color: var(--text); padding-bottom: 40p
 .filter-bar select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; min-width: 160px; }
 .export-actions { display: flex; gap: 8px; margin-left: auto; }
 
-/* --- AGGIORNAMENTO SEZIONE TABELLE --- */
-.table-container { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-table { width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed; }
+/* --- SEZIONE TABELLA ED ICONE (Aggiornata V2) --- */
+.table-container { 
+    background: var(--bg-card); 
+    border: 1px solid var(--border); 
+    border-radius: 6px; 
+    overflow: hidden; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+}
 
-/* Dimensione font uniforme per l'intero corpo della tabella */
+.table-wrapper { 
+    width: 100%; 
+    overflow-x: auto; 
+}
+
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    text-align: left; 
+    table-layout: auto; 
+    min-width: 1200px; 
+}
+
 th, td { 
-    padding: 12px 16px; 
+    padding: 10px 12px; 
     border-bottom: 1px solid var(--border); 
-    font-size: 0.9rem; 
-    vertical-align: middle; /* Centratura verticale delle scritte nel record */
+    font-size: 0.88rem; 
+    vertical-align: middle; 
+    white-space: normal; 
+    word-break: break-word; 
 }
 
-th { background: #f1f5f9; color: var(--primary-light); font-weight: 600; cursor: pointer; user-select: none; }
-th:hover { background: #e2e8f0; }
-
-/* Gestione delle larghezze delle colonne per ottimizzare gli spazi */
-th:nth-child(1), td:nth-child(1) { width: 70px; font-weight: bold; } /* LEPTA in grassetto */
-th:nth-child(2), td:nth-child(2) { width: 130px; } /* Area */
-th:nth-child(3), td:nth-child(3) { width: 160px; } /* Segmento */
-th:nth-child(4), td:nth-child(4) { width: 250px; font-weight: bold; } /* Argomento in grassetto */
-th:nth-child(5), td:nth-child(5) { width: 90px; }  /* Valenza */
-th:nth-child(6), td:nth-child(6) { width: 110px; } /* Tipologia */
-th:nth-child(7), td:nth-child(7) { width: 170px; } /* Stato */
-th:nth-child(8), td:nth-child(8) { width: 250px; text-align: center; } /* Azioni */
-
-/* Visualizzazione dinamica e compatta (1 sola riga di testo) */
-tbody tr { cursor: pointer; transition: background-color 0.15s; }
-tbody tr:hover { background-color: #f8fafc; }
-
-tbody tr:not(.expanded) td {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+th { 
+    background: #f1f5f9; 
+    color: var(--primary-light); 
+    font-weight: 600; 
+    cursor: pointer; 
+    user-select: none;
+    white-space: nowrap; 
 }
 
-/* Espansione della riga al clic */
-tbody tr.expanded td {
-    white-space: normal;
-    overflow: visible;
-    word-break: break-word;
+th:hover { 
+    background: #e2e8f0; 
 }
 
-/* Scroll Orizzontale Tabella V2 */
-.table-wrapper { width: 100%; overflow-x: auto; }
+td:nth-child(1) { font-weight: bold; }
+
+.actions-col { 
+    width: 110px; 
+    text-align: right; 
+}
+
+.action-btns { 
+    display: flex; 
+    gap: 4px; 
+    justify-content: flex-end; 
+    align-items: center; 
+}
+
+.btn-icon {
+    padding: 6px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+}
+
+.btn-icon svg {
+    width: 15px;
+    height: 15px;
+    fill: currentColor;
+}
+
+.btn-icon:hover { 
+    transform: translateY(-1px); 
+}
+
 .v2-fields-container { margin-top: 20px; padding-top: 15px; border-top: 2px dashed var(--border); }
 .form-section-title { font-weight: bold; color: var(--primary); font-size: 1rem; margin-bottom: 12px; }
-
-/* Input Sola Lettura */
 .readonly-input { background-color: #f1f5f9; cursor: not-allowed; font-weight: bold; }
-
-/* Data Approvazione KPI */
 .kpi-value-date { font-size: 0.9rem; font-weight: bold; color: var(--success); }
 
-/* Riga Totali a Piè di Pagina */
-.totals-row td { background-color: #e2e8f0; font-weight: bold; border-top: 2px solid var(--primary-light); color: var(--primary); }
+.totals-row td { 
+    background-color: #e2e8f0; 
+    font-weight: bold; 
+    border-top: 2px solid var(--primary-light); 
+    color: var(--primary); 
+}
 
-/* Ridimensionamento modale per ospitare i campi V2 */
-.modal-content { max-width: 850px; }
-
-.actions-col { text-align: right; }
-.table-footer-actions { padding: 15px; background: #f1f5f9; border-top: 1px solid var(--border); }
+.table-footer-actions { 
+    padding: 15px; 
+    background: #f1f5f9; 
+    border-top: 1px solid var(--border); 
+}
 
 /* Componenti di Form standard */
 .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; }
