@@ -195,8 +195,8 @@ DOM.btnClonaAnno.addEventListener('click', async () => {
         argomento: c.argomento,
         valenza: c.valenza,
         tipologia: c.tipologia,
-        obiettivi: c.obiettivi || '',
-        destinatari: c.destinatari || '',
+        obiettivi: '',
+        destinatari: '',
         stato_avanzamento: 'Pianificato',
         creato_da: appState.user.id
     }));
