@@ -39,7 +39,7 @@ body { background-color: var(--bg-main); color: var(--text); padding-bottom: 40p
 .filter-bar select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 4px; min-width: 160px; }
 .export-actions { display: flex; gap: 8px; margin-left: auto; }
 
-/* --- SEZIONE TABELLA ED ICONE (Aggiornata V2) --- */
+/* --- SEZIONE TABELLA, TRONCATURA MIRATA ED ESPANSIONE --- */
 .table-container { 
     background: var(--bg-card); 
     border: 1px solid var(--border); 
@@ -66,9 +66,8 @@ th, td {
     border-bottom: 1px solid var(--border); 
     font-size: 0.88rem; 
     vertical-align: middle; 
-    white-space: normal; 
-    overflow-wrap: break-word;
-    min-width: max-content;
+    white-space: nowrap; /* Mantiene le colonne standard su una riga */
+    min-width: max-content; /* Impedisce che le colonne vuote/brevi si comprimano */
 }
 
 th { 
@@ -77,15 +76,39 @@ th {
     font-weight: 600; 
     cursor: pointer; 
     user-select: none;
-    white-space: nowrap; 
 }
 
 th:hover { 
     background: #e2e8f0; 
 }
 
-td:nth-child(1) { font-weight: bold; }
+/* Indicatore visivo per la riga cliccabile */
+tbody tr { 
+    cursor: pointer; 
+    transition: background-color 0.15s; 
+}
 
+tbody tr:hover { 
+    background-color: #f8fafc; 
+}
+
+/* --- TRONCATURA MIRATA (Solo Segmento, Argomento, Titolo Esteso) --- */
+td.cell-truncate {
+    max-width: 220px; /* Larghezza massima prima di mostrare i tre puntini (...) */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --- ESPANSIONE RIGA AL CLICK --- */
+tbody tr.expanded td.cell-truncate {
+    white-space: normal;
+    overflow: visible;
+    word-break: break-word;
+    max-width: none;
+}
+
+/* Colonna Azioni e Pulsanti Icona */
 .actions-col { 
     width: 110px; 
     text-align: right; 
