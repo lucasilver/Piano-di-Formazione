@@ -37,13 +37,19 @@
         </header>
 
         <main class="dashboard-layout">
+         <!-- Pannello KPI con Data Approvazione e Pulsante Approva -->
             <section class="control-panelCard">
                 <div class="edition-selector">
                     <label for="select-anno">Edizione Piano:</label>
                     <select id="select-anno"></select>
+                    <button id="btn-approva-piano" class="btn btn-success btn-sm hidden">Approva Piano</button>
                     <button id="btn-clona-anno" class="btn btn-secondary btn-sm hidden">Passa ad Anno Successivo</button>
                 </div>
                 <div class="kpi-container">
+                    <div id="approvazione-box" class="kpi-card hidden">
+                        <span class="kpi-title">Approvato Il</span>
+                        <span id="kpi-data-approvazione" class="kpi-value-date">-</span>
+                    </div>
                     <div class="kpi-card"><span class="kpi-title">Pianificati</span><span id="kpi-pianificato" class="kpi-value">0%</span></div>
                     <div class="kpi-card"><span class="kpi-title">In Corso</span><span id="kpi-corso" class="kpi-value">0%</span></div>
                     <div class="kpi-card"><span class="kpi-title">Conclusi</span><span id="kpi-concluso" class="kpi-value">0%</span></div>
@@ -73,23 +79,33 @@
                 </div>
             </section>
 
+      <!-- Tabella Estesa con Riga Totali (tfoot) -->
             <section class="table-container">
-                <table id="corsi-table">
-                    <thead>
-                        <tr>
-                            <th data-sort="lepta">LEPTA</th>
-                            <th data-sort="area">Area</th>
-                            <th data-sort="segmento_formativo">Segmento</th>
-                            <th data-sort="argomento">Argomento</th>
-                            <th data-sort="valenza">Valenza</th>
-                            <th data-sort="tipologia">Tipologia</th>
-                            <th data-sort="stato_avanzamento">Stato</th>
-                            <th class="actions-col">Azioni</th>
-                        </tr>
-                    </thead>
-                    <tbody id="corsi-tbody">
-                        </tbody>
-                </table>
+                <div class="table-wrapper">
+                    <table id="corsi-table">
+                        <thead>
+                            <tr id="table-header-row">
+                                <!-- Intestazioni generate dinamicamente via JS in base allo stato Bozza/Approvato -->
+                            </tr>
+                        </thead>
+                        <tbody id="corsi-tbody"></tbody>
+                        <tfoot id="corsi-tfoot" class="hidden">
+                            <tr class="totals-row">
+                                <td id="tot-label" colspan="7"><strong>TOTALI GENERALI</strong></td>
+                                <td id="tot-edizioni">0</td>
+                                <td id="tot-partecipanti">0</td>
+                                <td id="tot-dirigenti">0</td>
+                                <td id="tot-comparto">0</td>
+                                <td id="tot-uomini-comp">0</td>
+                                <td id="tot-donne-comp">0</td>
+                                <td id="tot-uomini-dir">0</td>
+                                <td id="tot-donne-dir">0</td>
+                                <td id="tot-spesa">€ 0.00</td>
+                                <td></td> <!-- Spazio per azioni -->
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
                 <div class="table-footer-actions">
                     <button id="btn-apri-form" class="btn btn-primary">+ Aggiungi Corso</button>
                 </div>
@@ -98,100 +114,171 @@
     </div>
 
     <div id="corso-modal" class="modal hidden">
-        <div class="modal-content">
-            <h3 id="modal-title">Nuovo Corso di Formazione</h3>
-            <form id="corso-form">
-                <input type="hidden" id="corso-id">
+    <div class="modal-content">
+        <h3 id="modal-title">Gestione Corso di Formazione</h3>
+        <form id="corso-form">
+            <input type="hidden" id="corso-id">
+            
+            <!-- SEZIONE V1 (Sempre Visibile) -->
+            <div class="form-section-title">Dati Generali (Bozza)</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Attività LEPTA</label>
+                    <select id="form-lepta" required>
+                        <option value="W">W</option><option value="D">D</option><option value="O">O</option>
+                        <option value="L1">L1</option><option value="L2">L2</option><option value="L3">L3</option>
+                        <option value="L4">L4</option><option value="L5">L5</option><option value="L6">L6</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Area</label>
+                    <select id="form-area" required>
+                        <option value="Sicurezza">Sicurezza</option>
+                        <option value="Gestionali">Gestionali</option>
+                        <option value="Specialistiche">Specialistiche</option>
+                        <option value="Trasversali">Trasversali</option>
+                    </select>
+                </div>
+                <div class="form-group span-2">
+                    <label>Segmento Formativo</label>
+                    <select id="form-segmento" required>
+                        <option value="Acqua e Biomonitoraggi">Acqua e Biomonitoraggi</option>
+                        <option value="Acquisti">Acquisti</option>
+                        <option value="Addestramento a supporto della digitalizzazione e software">Addestramento a supporto della digitalizzazione e software</option>
+                        <option value="Agenti fisici">Agenti fisici</option>
+                        <option value="Aggiornamento normativo">Aggiornamento normativo</option>
+                        <option value="Aria, emissioni e aeriformi">Aria, emissioni e aeriformi</option>
+                        <option value="Contabilità">Contabilità</option>
+                        <option value="Contratti e procedure amministrative">Contratti e procedure amministrative</option>
+                        <option value="Gestione emergenze">Gestione emergenze</option>
+                        <option value="Impianti termici ed energia">Impianti termici ed energia</option>
+                        <option value="Laboratori">Laboratori</option>
+                        <option value="Linee guida e procedure">Linee guida e procedure</option>
+                        <option value="Metrologia">Metrologia</option>
+                        <option value="Mod Specialistici">Mod Specialistici</option>
+                        <option value="Neoassunti">Neoassunti</option>
+                        <option value="Organizzative Direzione IF">Organizzative Direzione IF</option>
+                        <option value="Qualità">Qualità</option>
+                        <option value="Reti e Comitati">Reti e Comitati</option>
+                        <option value="Rifiuti, suolo, bonifiche, sostanze pericolose, amianto e inquinanti emergenti">Rifiuti, suolo, bonifiche, sostanze pericolose, amianto e inquinanti emergenti</option>
+                        <option value="Rischi naturali e ambientali">Rischi naturali e ambientali</option>
+                        <option value="Transizione Digitale">Transizione Digitale</option>
+                        <option value="Trasversali">Trasversali</option>
+                        <option value="VIA, VAS, VI, AIA, AUA, RIR">VIA, VAS, VI, AIA, AUA, RIR</option>
+                    </select>
+                </div>
+                <div class="form-group span-2">
+                    <label>Argomento Corso</label>
+                    <input type="text" id="form-argomento" required>
+                </div>
+                <div class="form-group">
+                    <label>Valenza</label>
+                    <select id="form-valenza" required>
+                        <option value="Interno">Interno</option>
+                        <option value="Esterno">Esterno</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tipologia</label>
+                    <select id="form-tipologia" required>
+                        <option value="In presenza">In presenza</option>
+                        <option value="FAD">FAD</option>
+                        <option value="E-learning">E-learning</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Stato Avanzamento</label>
+                    <select id="form-stato" required>
+                        <option value="Pianificato">Pianificato</option>
+                        <option value="In corso">In corso</option>
+                        <option value="Concluso">Concluso</option>
+                        <option value="Annullato">Annullato</option>
+                    </select>
+                </div>
+                <div class="form-group span-2">
+                    <label>Obiettivi del corso</label>
+                    <textarea id="form-obiettivi" rows="2" required></textarea>
+                </div>
+                <div class="form-group span-2">
+                    <label>Destinatari</label>
+                    <textarea id="form-destinatari" rows="2" required></textarea>
+                </div>
+            </div>
+
+            <!-- SEZIONE V2 (Disabilitata/Nascosta in Bozza) -->
+            <div id="sezione-v2" class="v2-fields-container hidden">
+                <div class="form-section-title">Dati Consuntivi e Rendicontazione (Piano Approvato)</div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Attività LEPTA</label>
-                        <select id="form-lepta" required>
-                            <option value="W">W</option><option value="D">D</option><option value="O">O</option>
-                            <option value="L1">L1</option><option value="L2">L2</option><option value="L3">L3</option>
-                            <option value="L4">L4</option><option value="L5">L5</option><option value="L6">L6</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Area</label>
-                        <select id="form-area" required>
-                            <option value="Sicurezza">Sicurezza</option>
-                            <option value="Gestionali">Gestionali</option>
-                            <option value="Specialistiche">Specialistiche</option>
-                            <option value="Trasversali">Trasversali</option>
-                        </select>
+                        <label>Codice (Max 24 car.)</label>
+                        <input type="text" id="form-codice" maxlength="24">
                     </div>
                     <div class="form-group span-2">
-                        <label>Segmento Formativo</label>
-                        <select id="form-segmento" required>
-                            <option value="Acqua e Biomonitoraggi">Acqua e Biomonitoraggi</option>
-                            <option value="Acquisti">Acquisti</option>
-                            <option value="Addestramento a supporto della digitalizzazione e software">Addestramento a supporto della digitalizzazione e software</option>
-                            <option value="Agenti fisici">Agenti fisici</option>
-                            <option value="Aggiornamento normativo">Aggiornamento normativo</option>
-                            <option value="Aria, emissioni e aeriformi">Aria, emissioni e aeriformi</option>
-                            <option value="Contabilità">Contabilità</option>
-                            <option value="Contratti e procedure amministrative">Contratti e procedure amministrative</option>
-                            <option value="Gestione emergenze">Gestione emergenze</option>
-                            <option value="Impianti termici ed energia">Impianti termici ed energia</option>
-                            <option value="Laboratori">Laboratori</option>
-                            <option value="Linee guida e procedure">Linee guida e procedure</option>
-                            <option value="Metrologia">Metrologia</option>
-                            <option value="Mod Specialistici">Mod Specialistici</option>
-                            <option value="Neoassunti">Neoassunti</option>
-                            <option value="Organizzative Direzione IF">Organizzative Direzione IF</option>
-                            <option value="Qualità">Qualità</option>
-                            <option value="Reti e Comitati">Reti e Comitati</option>
-                            <option value="Rifiuti, suolo, bonifiche, sostanze pericolose, amianto e inquinanti emergenti">Rifiuti, suolo, bonifiche, sostanze pericolose, amianto e inquinanti emergenti</option>
-                            <option value="Rischi naturali e ambientali">Rischi naturali e ambientali</option>
-                            <option value="Transizione Digitale">Transizione Digitale</option>
-                            <option value="Trasversali">Trasversali</option>
-                            <option value="VIA, VAS, VI, AIA, AUA, RIR">VIA, VAS, VI, AIA, AUA, RIR</option>
-                        </select>
-                    </div>
-                    <div class="form-group span-2">
-                        <label>Argomento Corso</label>
-                        <input type="text" id="form-argomento" required>
+                        <label>Titolo Esteso</label>
+                        <input type="text" id="form-titolo">
                     </div>
                     <div class="form-group">
-                        <label>Valenza</label>
-                        <select id="form-valenza" required>
-                            <option value="Interno">Interno</option>
-                            <option value="Esterno">Esterno</option>
-                        </select>
+                        <label>Edizioni</label>
+                        <input type="number" id="form-edizioni" min="0" value="0">
                     </div>
                     <div class="form-group">
-                        <label>Tipologia</label>
-                        <select id="form-tipologia" required>
-                            <option value="In presenza">In presenza</option>
-                            <option value="FAD">FAD</option>
-                            <option value="E-learning">E-learning</option>
-                        </select>
+                        <label>Partecipanti Totali (Auto)</label>
+                        <input type="number" id="form-partecipanti" readonly class="readonly-input" value="0">
                     </div>
                     <div class="form-group">
-                        <label>Stato Avanzamento</label>
-                        <select id="form-stato" required>
-                            <option value="Pianificato">Pianificato</option>
-                            <option value="In corso">In corso</option>
-                            <option value="Concluso">Concluso</option>
-                            <option value="Annullato">Annullato</option>
-                        </select>
+                        <label>Dirigenti</label>
+                        <input type="number" id="form-dirigenti" min="0" value="0">
                     </div>
-                    <div class="form-group span-2">
-                        <label>Obiettivi del corso</label>
-                        <textarea id="form-obiettivi" rows="3" required></textarea>
+                    <div class="form-group">
+                        <label>Comparto</label>
+                        <input type="number" id="form-comparto" min="0" value="0">
                     </div>
-                    <div class="form-group span-2">
-                        <label>Destinatari</label>
-                        <textarea id="form-destinatari" rows="2" required></textarea>
+                    <div class="form-group">
+                        <label>Uomini Comparto</label>
+                        <input type="number" id="form-uomini-comparto" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Donne Comparto</label>
+                        <input type="number" id="form-donne-comparto" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Uomini Dirigenti</label>
+                        <input type="number" id="form-uomini-dirigenti" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Donne Dirigenti</label>
+                        <input type="number" id="form-donne-dirigenti" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Ore Formazione (HH:MM)</label>
+                        <input type="text" id="form-ore" placeholder="00:00" pattern="[0-9]{1,3}:[0-5][0-9]">
+                    </div>
+                    <div class="form-group">
+                        <label>Totale Spesa (€)</label>
+                        <input type="number" id="form-totale-spesa" step="0.01" min="0" value="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Comparto Spesa %</label>
+                        <input type="number" id="form-comparto-spesa-perc" step="0.01" min="0" max="100" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Dirigenti Spesa %</label>
+                        <input type="number" id="form-dirigenti-spesa-perc" step="0.01" min="0" max="100" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Valutazione ECM</label>
+                        <input type="number" id="form-ecm" step="0.1" min="0" value="0.0">
                     </div>
                 </div>
-                <div class="modal-actions">
-                    <button type="button" id="btn-chiudi-modal" class="btn btn-secondary">Annulla</button>
-                    <button type="submit" class="btn btn-primary">Salva Corso</button>
-                </div>
-            </form>
-        </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="btn-chiudi-modal" class="btn btn-secondary">Annulla</button>
+                <button type="submit" class="btn btn-primary">Salva Corso</button>
+            </div>
+        </form>
     </div>
+</div>
 <script src="app.js"></script>
 </body>
 </html>
