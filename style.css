@@ -81,6 +81,23 @@ tbody tr.expanded td {
     word-break: break-word;
 }
 
+/* Scroll Orizzontale Tabella V2 */
+.table-wrapper { width: 100%; overflow-x: auto; }
+.v2-fields-container { margin-top: 20px; padding-top: 15px; border-top: 2px dashed var(--border); }
+.form-section-title { font-weight: bold; color: var(--primary); font-size: 1rem; margin-bottom: 12px; }
+
+/* Input Sola Lettura */
+.readonly-input { background-color: #f1f5f9; cursor: not-allowed; font-weight: bold; }
+
+/* Data Approvazione KPI */
+.kpi-value-date { font-size: 0.9rem; font-weight: bold; color: var(--success); }
+
+/* Riga Totali a Piè di Pagina */
+.totals-row td { background-color: #e2e8f0; font-weight: bold; border-top: 2px solid var(--primary-light); color: var(--primary); }
+
+/* Ridimensionamento modale per ospitare i campi V2 */
+.modal-content { max-width: 850px; }
+
 .actions-col { text-align: right; }
 .table-footer-actions { padding: 15px; background: #f1f5f9; border-top: 1px solid var(--border); }
 
