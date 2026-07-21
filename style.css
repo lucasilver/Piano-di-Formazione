@@ -58,11 +58,11 @@ th:hover { background: #e2e8f0; }
 th:nth-child(1), td:nth-child(1) { width: 70px; font-weight: bold; } /* LEPTA in grassetto */
 th:nth-child(2), td:nth-child(2) { width: 130px; } /* Area */
 th:nth-child(3), td:nth-child(3) { width: 160px; } /* Segmento */
-th:nth-child(4), td:nth-child(4) { font-weight: bold; } /* Argomento in grassetto */
+th:nth-child(4), td:nth-child(4) { width: 250px; font-weight: bold; } /* Argomento in grassetto */
 th:nth-child(5), td:nth-child(5) { width: 90px; }  /* Valenza */
 th:nth-child(6), td:nth-child(6) { width: 110px; } /* Tipologia */
-th:nth-child(7), td:nth-child(7) { width: 150px; } /* Stato */
-th:nth-child(8), td:nth-child(8) { width: 200px; text-align: center; } /* Azioni */
+th:nth-child(7), td:nth-child(7) { width: 170px; } /* Stato */
+th:nth-child(8), td:nth-child(8) { width: 250px; text-align: center; } /* Azioni */
 
 /* Visualizzazione dinamica e compatta (1 sola riga di testo) */
 tbody tr { cursor: pointer; transition: background-color 0.15s; }
