@@ -98,18 +98,37 @@ DOM.logoutBtn.addEventListener('click', async () => {
 
 // --- CARICAMENTO EDITIONS & PIANO ---
 async function caricaEdizioni() {
-    const { data, error } = await supabaseClient.from('edizioni_piano').select('*').order('anno', { ascending: false });
-    if (error) return console.error(error);
-    
+    const { data, error } = await supabaseClient
+        .from('edizioni_piano')
+        .select('*')
+        .order('anno', { ascending: false });
+
+    if (error) return console.error("Errore edizioni:", error);
+
     appState.edizioni = data;
+
     if (data.length === 0) {
         const annoCorrente = new Date().getFullYear();
-        const { data: nuovaEd } = await supabaseClient.from('edizioni_piano').insert([{ anno: annoCorrente, stato: 'bozza' }]).select();
+        const { data: nuovaEd } = await supabaseClient
+            .from('edizioni_piano')
+            .insert([{ anno: annoCorrente, stato: 'bozza' }])
+            .select();
         appState.edizioni = nuovaEd;
     }
 
-    DOM.selectAnno.innerHTML = appState.edizioni.map(e => `<option value="${e.id}">${e.anno} (${e.stato})</option>`).join('');
-    setEdizioneCorrente(DOM.selectAnno.value);
+    // Ripopola la select
+    DOM.selectAnno.innerHTML = appState.edizioni
+        .map(e => `<option value="${e.id}">${e.anno} (${e.stato})</option>`)
+        .join('');
+
+    // SE l'edizione corrente esiste ancora nell'elenco, la MANTIENE selezionata;
+    // ALTRIMENTI seleziona la prima (più recente)
+    const idValido = appState.edizioni.some(e => e.id === appState.edizioneCorrenteId)
+        ? appState.edizioneCorrenteId
+        : appState.edizioni[0].id;
+
+    DOM.selectAnno.value = idValido;
+    setEdizioneCorrente(idValido);
 }
 
 function setEdizioneCorrente(id) {
@@ -224,6 +243,8 @@ function renderTableHeader() {
 
     if (appState.edizioneStato === 'approvato') {
         html += `
+            <th data-sort="codice">Codice</th>
+            <th data-sort="titolo">Titolo Esteso</th>
             <th data-sort="edizioni">Ediz.</th>
             <th data-sort="partecipanti">Part. Tot.</th>
             <th data-sort="dirigenti">Dirig.</th>
@@ -268,9 +289,10 @@ function processaEDisplay() {
     if (appState.edizioneStato === 'approvato') calcolaTotaliPieDiPagina(corsiFiltrati);
 }
 
+// --- RENDER CORPO TABELLA ---
 function renderTabella(lista) {
     if (lista.length === 0) {
-        const colSpan = appState.edizioneStato === 'approvato' ? 18 : 8;
+        const colSpan = appState.edizioneStato === 'approvato' ? 20 : 8;
         DOM.corsiTbody.innerHTML = `<tr><td colspan="${colSpan}" style="text-align:center;">Nessun corso presente.</td></tr>`;
         return;
     }
@@ -281,12 +303,14 @@ function renderTabella(lista) {
         <tr data-id="${c.id}">
             <td><strong>${c.lepta}</strong></td>
             <td>${c.area}</td>
-            <td>${c.segmento_formativo}</td>
-            <td><strong>${c.argomento}</strong> ${c.titolo ? `<br><small>${c.titolo}</small>` : ''}</td>
+            <td><small>${c.segmento_formativo}</small></td>
+            <td><strong>${c.argomento}</strong></td>
             <td>${c.valenza}</td>
             <td>${c.tipologia}</td>
             <td><span class="badge badge-${c.stato_avanzamento.toLowerCase().replace(' ', '')}">${c.stato_avanzamento}</span></td>
             ${isApprovato ? `
+                <td><code>${c.codice || '-'}</code></td>
+                <td>${c.titolo || '-'}</td>
                 <td>${c.edizioni || 0}</td>
                 <td><strong>${c.partecipanti || 0}</strong></td>
                 <td>${c.dirigenti || 0}</td>
@@ -299,11 +323,19 @@ function renderTabella(lista) {
                 <td>€ ${(c.totale_spesa || 0).toFixed(2)}</td>
             ` : ''}
             <td class="actions-col" onclick="event.stopPropagation()">
-                <button class="btn btn-secondary btn-sm" onclick="clonaCorso('${c.id}')" title="Clona base corso">Clona</button>
-                ${(appState.userRole === 'admin' || appState.userRole === 'responsabile') ? `
-                    <button class="btn btn-secondary btn-sm" onclick="apriModificaCorso('${c.id}')">Modifica</button>
-                    <button class="btn btn-danger btn-sm" onclick="eliminaCorso('${c.id}')">Elimina</button>
-                ` : ''}
+                <div class="action-btns">
+                    <button class="btn-icon btn-secondary" onclick="clonaCorso('${c.id}')" title="Clona base corso">
+                        <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                    </button>
+                    ${(appState.userRole === 'admin' || appState.userRole === 'responsabile') ? `
+                        <button class="btn-icon btn-primary" onclick="apriModificaCorso('${c.id}')" title="Modifica corso">
+                            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                        </button>
+                        <button class="btn-icon btn-danger" onclick="eliminaCorso('${c.id}')" title="Elimina corso">
+                            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        </button>
+                    ` : ''}
+                </div>
             </td>
         </tr>
     `).join('');
@@ -348,7 +380,7 @@ function setupSortingAndRowExpansion() {
     });
 }
 
-// --- CALCOLO TOTALI FOOTER ---
+// --- CALCOLO TOTALI FOOTER (Aggiornato Colspan = 9 per accogliere Codice e Titolo) ---
 function calcolaTotaliPieDiPagina(lista) {
     const tot = lista.reduce((acc, c) => {
         acc.edizioni += Number(c.edizioni || 0);
@@ -364,6 +396,9 @@ function calcolaTotaliPieDiPagina(lista) {
         return acc;
     }, { edizioni:0, partecipanti:0, dirigenti:0, comparto:0, uomini_comparto:0, donne_comparto:0, uomini_dirigenti:0, donne_dirigenti:0, ore_minuti:0, totale_spesa:0 });
 
+    const totLabel = document.getElementById('tot-label');
+    if (totLabel) totLabel.colSpan = 9; // LEPTA, Area, Segmento, Argomento, Valenza, Tipologia, Stato, Codice, Titolo
+
     document.getElementById('tot-edizioni').textContent = tot.edizioni;
     document.getElementById('tot-partecipanti').textContent = tot.partecipanti;
     document.getElementById('tot-dirigenti').textContent = tot.dirigenti;
@@ -372,8 +407,7 @@ function calcolaTotaliPieDiPagina(lista) {
     document.getElementById('tot-donne-comp').textContent = tot.donne_comparto;
     document.getElementById('tot-uomini-dir').textContent = tot.uomini_dirigenti;
     document.getElementById('tot-donne-dir').textContent = tot.donne_dirigenti;
-    
-    // Inseriamo o aggiorniamo la cella ore nel tfoot dinamicamente
+
     let totOreElem = document.getElementById('tot-ore');
     if (!totOreElem) {
         totOreElem = document.createElement('td');
@@ -384,7 +418,6 @@ function calcolaTotaliPieDiPagina(lista) {
     totOreElem.textContent = minutiToHHMM(tot.ore_minuti);
     document.getElementById('tot-spesa').textContent = `€ ${tot.totale_spesa.toFixed(2)}`;
 }
-
 // --- CALCOLI AUTOMATICI E VALIDAZIONE MODALE ---
 function setupAutoCalculations() {
     const compInput = document.getElementById('form-comparto');
