@@ -67,7 +67,7 @@ th, td {
     font-size: 0.88rem; 
     vertical-align: middle; 
     white-space: normal; 
-    word-break: break-word;
+    overflow-wrap: break-word;
     min-width: max-content;
 }
 
