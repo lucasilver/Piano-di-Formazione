@@ -61,8 +61,8 @@ th:nth-child(3), td:nth-child(3) { width: 160px; } /* Segmento */
 th:nth-child(4), td:nth-child(4) { font-weight: bold; } /* Argomento in grassetto */
 th:nth-child(5), td:nth-child(5) { width: 90px; }  /* Valenza */
 th:nth-child(6), td:nth-child(6) { width: 110px; } /* Tipologia */
-th:nth-child(7), td:nth-child(7) { width: 120px; } /* Spazio ridotto per lo Stato */
-th:nth-child(8), td:nth-child(8) { width: 170px; text-align: center; } /* Azioni */
+th:nth-child(7), td:nth-child(7) { width: 150px; } /* Stato */
+th:nth-child(8), td:nth-child(8) { width: 200px; text-align: center; } /* Azioni */
 
 /* Visualizzazione dinamica e compatta (1 sola riga di testo) */
 tbody tr { cursor: pointer; transition: background-color 0.15s; }
