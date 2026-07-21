@@ -139,6 +139,14 @@ function setEdizioneCorrente(id) {
     appState.edizioneCorrenteAnno = ed.anno;
     appState.edizioneStato = ed.stato;
 
+    const isAuthorized = appState.userRole === 'responsabile' || appState.userRole === 'admin';
+
+    // Mostra il pulsante "Passa ad Anno Successivo" solo agli utenti autorizzati
+    if (isAuthorized) {
+        DOM.btnClonaAnno.classList.remove('hidden');
+    } else {
+        DOM.btnClonaAnno.classList.add('hidden');
+
     // Gestione visualizzazione stato Approvato
     if (ed.stato === 'approvato') {
         DOM.approvazioneBox.classList.remove('hidden');
@@ -193,7 +201,7 @@ DOM.btnClonaAnno.addEventListener('click', async () => {
         return alert(`L'edizione del piano per l'anno ${nuovoAnno} esiste già.`);
     }
 
-    if (!confirm(`Vuoi creare la nuova edizione per l'anno ${nuovoAnno} clonando i corsi attuali (solo dati V1 base)?`)) return;
+    if (!confirm(`Vuoi creare la nuova edizione per l'anno ${nuovoAnno} clonando i corsi attuali ancora in stato: Pianificato?`)) return;
 
     // 1. Inserisce la nuova edizione in stato bozza
     const { data: nuovaEd, error: errEd } = await supabaseClient
